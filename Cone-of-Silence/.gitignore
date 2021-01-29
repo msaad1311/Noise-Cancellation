@@ -1,0 +1,21 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Dot underscore
+._*
+
+# Outputs
+
+# Pytorch
+*.pt
+
+# Audio files
+*.wav
+*.mp4
+*.flac
+*.mp3
+
+# Data Files
+*.npy
