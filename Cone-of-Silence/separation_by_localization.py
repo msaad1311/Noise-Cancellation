@@ -188,10 +188,11 @@ def run_separation(mixed_data, model, args,
 
 def main(args):
     device = torch.device('cuda') if args.use_cuda else torch.device('cpu')
-
+    print(args.model_checkpoint)
     args.device = device
     model = CoSNetwork(n_audio_channels=args.n_channels)
-    model.load_state_dict(torch.load(args.model_checkpoint), strict=True, map_location=args.device)
+    model.load_state_dict(torch.load(args.model_checkpoint), strict=True)
+    model = model.to(device)
     model.train = False
     model.to(device)
 
@@ -230,17 +231,17 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('model_checkpoint',
+    parser.add_argument('--model_checkpoint',
                         type=str,
-                        help="Path to the model file")
-    parser.add_argument('input_file', type=str, help="Path to the input file")
-    parser.add_argument('output_dir',
+                        help="Path to the model file",default=r'checkpoints\realdata_4mics_.03231m_44100kHz.pt')
+    parser.add_argument('--input_file', type=str, help="Path to the input file",default=r'dataset\real_multiple_speakers_4mics.wav')
+    parser.add_argument('--output_dir',
                         type=str,
-                        help="Path to write the outputs")
-    parser.add_argument('--sr', type=int, default=22050, help="Sampling rate")
+                        help="Path to write the outputs",default='outputs')
+    parser.add_argument('--sr', type=int, default=44100 , help="Sampling rate")
     parser.add_argument('--n_channels',
                         type=int,
-                        default=2,
+                        default=4,
                         help="Number of channels")
     parser.add_argument('--use_cuda',
                         dest='use_cuda',
