@@ -1,4 +1,5 @@
-from tensorflow.contrib.training import HParams
+# from tensorflow.contrib.training import HParams
+from tensorboard.plugins.hparams import api as hp
 from glob import glob
 import os, pickle
 import numpy as np
@@ -46,8 +47,12 @@ def get_all_files(pretrain_path, train_path, split):
 
     return filelist
 
+class Namespace:
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
 # Default hyperparameters
-hparams = HParams(
+hparams = Namespace(
     num_mels=80,  # Number of mel-spectrogram channels and local conditioning dimensionality
     #  network
     rescale=True,  # Whether to rescale audio prior to preprocessing
