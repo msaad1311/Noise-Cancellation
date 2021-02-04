@@ -2,3 +2,5 @@
 pseudo-visual-speech-denoising/checkpoints/denoising.pt
 pseudo-visual-speech-denoising/lipsync/checkpoints/lipsync_student.pth
 pseudo-visual-speech-denoising/face_detection/detection/sfd/s3fd-619a316812.pth
+Experimentation2/checkpoints/denoising.pt
+Experimentation2/lipsync/checkpoints/lipsync_student.pth
