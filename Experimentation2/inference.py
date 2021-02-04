@@ -1,6 +1,6 @@
 import os
 import sys
-import argparse
+import pyaudio
 import numpy as np
 import subprocess
 import soundfile as sf
@@ -10,25 +10,30 @@ import audio.audio_utils as audio
 import audio.hparams as hp
 from models import *
 import torch
+import matplotlib.pyplot as plt
 
 # Initialize the global variables
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 sampling_rate = 16000
 
+def soundplot(stream):
+    data = np.fromstring(stream.read(sampling_rate),dtype=np.float32)
+    return data
 
-def load_wav(args):
-
-    wav_file = args.input
-
-    subprocess.call('ffmpeg -hide_banner -loglevel panic -threads 1 -y -i %s -async 1 -ac 1 -vn \
-					-acodec pcm_s16le -ar 16000 %s' % (args.input, wav_file), shell=True)
-
-    wav = audio.load_wav(wav_file, sampling_rate)
-
-    # os.remove(str(args.input))
-
-    return wav
-
+def load_wav(duration):
+    da=[]
+    p=pyaudio.PyAudio()
+    stream=p.open(format=pyaudio.paFloat32,channels=1,rate=sampling_rate,input=True)
+    for i in range(duration):
+        #if i%10==0: print(i) 
+        print(i)
+        d=soundplot(stream)
+        da.append(soundplot(stream)) 
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+    print('Recording Completed')
+    return np.array(da).reshape(-1)
 
 def get_spec(wav):
 
@@ -87,7 +92,7 @@ def get_segmented_mels(start_idx, noisy_wav):
     return mels
 
 
-def generate_video(stft, args):
+def generate_video(stft, resulFile):
 
     # Reconstruct the predicted wav
     mag = stft[:257, :]
@@ -101,7 +106,7 @@ def generate_video(stft, args):
                         win_length=hp.hparams.win_size_den)
 
     # Create the folder to save the results
-    result_dir = args.result_dir
+    result_dir = resulFile
     if not os.path.exists(result_dir):
         os.makedirs(result_dir)
 
@@ -110,38 +115,18 @@ def generate_video(stft, args):
     sf.write(audio_output, wav, sampling_rate)
 
     print("Saved the denoised audio file:", audio_output)
-
-    # Save the video output file if the input is a video file
-    if args.input.split('.')[1] in ['wav', 'mp3']:
-        return
-    else:
-        no_sound_video = os.path.join(result_dir, 'result_nosouund.mp4')
-        subprocess.call('ffmpeg -hide_banner -loglevel panic -i %s -c copy -an -strict -2 %s' %
-                        (args.input, no_sound_video), shell=True)
-
-        video_output_mp4 = os.path.join(result_dir, 'result.mp4')
-        if os.path.exists(video_output_mp4):
-            os.remove(video_output_mp4)
-
-        subprocess.call('ffmpeg -hide_banner -loglevel panic -y -i %s -i %s -strict -2 -q:v 1 %s' %
-                        (audio_output, no_sound_video, video_output_mp4), shell=True)
-
-        os.remove(no_sound_video)
-
-        print("Saved the denoised video file:", video_output_mp4)
-
-        return
+    return
 
 
-def load_model(args):
+def load_model(combModel):
 
     model = Model()
-    print("Loaded model from: ", args.checkpoint_path)
+    print("Loaded model from: ", combModel)
 
     if not torch.cuda.is_available():
-        checkpoint = torch.load(args.checkpoint_path, map_location='cpu')
+        checkpoint = torch.load(combModel, map_location='cpu')
     else:
-        checkpoint = torch.load(args.checkpoint_path)
+        checkpoint = torch.load(combModel)
 
     ckpt = {}
     for key in checkpoint['state_dict'].keys():
@@ -156,16 +141,16 @@ def load_model(args):
     return model.eval()
 
 
-def load_lipsync_model(args):
+def load_lipsync_model(lipsModel):
 
     lipsync_student = Lipsync_Student()
 
     if not torch.cuda.is_available():
         lipsync_student_checkpoint = torch.load(
-            args.lipsync_student_model_path, map_location='cpu')
+            lipsModel, map_location='cpu')
     else:
         lipsync_student_checkpoint = torch.load(
-            args.lipsync_student_model_path)
+            lipsModel)
 
     ckpt = {}
     for key in lipsync_student_checkpoint['state_dict'].keys():
@@ -180,26 +165,31 @@ def load_lipsync_model(args):
     return lipsync_student.eval()
 
 
-def predict(args):
+def predict(duration,lipsModel,combModel,batchSize,resulFile):
 
     # Load the input wav
-    inp_wav = load_wav(args)
+    inp_wav = load_wav(duration)
     print('#'*80)
     print('input file loaded')
     print('#'*80)
     print("Input wav: ", inp_wav.shape)
+    inp_wav = inp_wav.astype(float)
+    plt.plot(inp_wav)
+    plt.show()
+    sf.write('testerFile.wav', inp_wav, sampling_rate)
 
     total_steps = inp_wav.shape[0]
+    # return inp_wav
 
     # Get the windows of 1 second wav step segments with a small overlap
     id_windows = [range(i, i + hp.hparams.wav_step_size) for i in range(1280, total_steps,
                                                                          hp.hparams.wav_step_size - hp.hparams.wav_step_overlap) if (i + hp.hparams.wav_step_size <= total_steps)]
 
     # Load the student lipsync model
-    lipsync_student = load_lipsync_model(args)
+    lipsync_student = load_lipsync_model(lipsModel)
 
     # Load the model
-    model = load_model(args)
+    model = load_model(combModel)
 
     generated_stft = None
     all_spec_batch = []
@@ -242,10 +232,10 @@ def predict(args):
     print("Total input segment windows: ", all_spec_batch.shape[0])
 
     pred_stft = []
-    for i in tqdm(range(0, all_spec_batch.shape[0], args.batch_size)):
+    for i in tqdm(range(0, all_spec_batch.shape[0], batchSize)):
 
-        mel_batch = all_mel_batch[i:i+args.batch_size]
-        spec_batch = all_spec_batch[i:i+args.batch_size]
+        mel_batch = all_mel_batch[i:i+batchSize]
+        spec_batch = all_spec_batch[i:i+batchSize]
 
         # Convert to torch tensors
         inp_mel = torch.FloatTensor(mel_batch).to(device)
@@ -288,28 +278,19 @@ def predict(args):
                 (generated_stft, pred_stft[i].T[:, :steps]), axis=1)
 
     if generated_stft is not None:
-        generate_video(generated_stft, args)
+        generate_video(generated_stft, resulFile)
     else:
         print("Oops! Couldn't denoise the input file!")
 
 
 if __name__ == '__main__':
+    
+    durationR = 5
+    lipsModel = r'lipsync\checkpoints\lipsync_student.pth'
+    combModel = r'checkpoints\denoising.pt'
+    batchSize = 32
+    resulFile = r'results'
+    inputFile = r'inputs'
 
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--lipsync_student_model_path', default='lipsync\checkpoints\lipsync_student.pth', type=str,
-                        help='Path of the lipgan model to generate frames')  # required=True,
-    parser.add_argument('--checkpoint_path', type=str,  default='checkpoints\denoising.pt',
-                        help='Path of the saved checkpoint to load weights from')
-    parser.add_argument('--input', type=str,default='noisyAudio3.wav',
-                        help='Filepath of input noisy audio/video')
-    parser.add_argument('--batch_size', type=int, default=32,
-                        required=False, help='Batch size for the model')
-    parser.add_argument('--result_dir', default='results', required=False,
-                        help='Path of the directory to save the results')
-
-    args = parser.parse_args()
-    print(args.batch_size)
-    print(type(args))
-
-    predict(args)
+    predict(durationR,lipsModel,combModel,batchSize,resulFile)
+    # print(sound)
