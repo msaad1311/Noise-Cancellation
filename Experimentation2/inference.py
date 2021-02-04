@@ -20,7 +20,7 @@ def soundplot(stream):
     data = np.fromstring(stream.read(sampling_rate),dtype=np.float32)
     return data
 
-def load_wav(duration):
+def start_strem(duration):
     da=[]
     p=pyaudio.PyAudio()
     stream=p.open(format=pyaudio.paFloat32,channels=1,rate=sampling_rate,input=True)
@@ -164,19 +164,52 @@ def load_lipsync_model(lipsModel):
 
     return lipsync_student.eval()
 
+def get_noise_from_sound(signal,noise,SNR):
+    RMS_s=math.sqrt(np.mean(signal**2))
+    #required RMS of noise
+    RMS_n=math.sqrt(RMS_s**2/(pow(10,SNR/10)))
+    
+    #current RMS of noise
+    RMS_n_current=math.sqrt(np.mean(noise**2))
+    noise=noise*(RMS_n/RMS_n_current)
+    
+    return noise
+
+def scaled(inputs,ranges):
+    scaler = MinMaxScaler(feature_range=ranges)
+    foo = scaler.fit_transform(inputs.reshape(-1,1))
+    return foo,scaler
+
+def mixer(clean,noisy,snr,scaler):
+    if(len(noisy)>len(clean)):
+        noisy=noisy[0:len(clean)] 
+    noisy = get_noise_from_sound(clean,noisy,SNR=snr)
+    mixed = clean+noisy
+    if scaler != None:
+        mixed = scaler.inverse_transform(mixed)
+    return mixed
+
 
 def predict(duration,lipsModel,combModel,batchSize,resulFile):
 
     # Load the input wav
-    inp_wav = load_wav(duration)
+    cleanAudio = start_strem(duration)
     print('#'*80)
     print('input file loaded')
     print('#'*80)
-    print("Input wav: ", inp_wav.shape)
-    inp_wav = inp_wav.astype(float)
+    print("Input wav: ", cleanAudio.shape)
+    
+    noiseAudio,sampleRate = librosa.load(r'audio\noise.mp3',sr=16000)
+    cleanAudio,cleanScaler = scaled(cleanAudio,(-1,1))
+    noiseAudio,noiseScaler = scaled(noiseAudio,(-1,1))
+    
+    inp_wav = mixer(cleanAudio,noiseAudio,0,None)
+    print(inp_wav.shape)
+    
     plt.plot(inp_wav)
     plt.show()
     sf.write('testerFile.wav', inp_wav, sampling_rate)
+    return
 
     total_steps = inp_wav.shape[0]
     # return inp_wav
