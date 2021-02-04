@@ -11,23 +11,27 @@ import audio.hparams as hp
 from models import *
 import torch
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
 
 # Initialize the global variables
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 sampling_rate = 16000
+chunk = int(sampling_rate/20)
 
 def soundplot(stream):
-    data = np.fromstring(stream.read(sampling_rate),dtype=np.float32)
+    data = np.fromstring(stream.read(chunk),dtype=np.float32)
     return data
 
 def start_strem(duration):
     da=[]
     p=pyaudio.PyAudio()
-    stream=p.open(format=pyaudio.paFloat32,channels=1,rate=sampling_rate,input=True)
-    for i in range(duration):
+    stream=p.open(format=pyaudio.paFloat32,channels=1,rate=sampling_rate,
+                  input=True,frames_per_buffer=chunk)
+    
+    for i in range(0,int(sampling_rate/chunk * duration)):
         #if i%10==0: print(i) 
         print(i)
-        d=soundplot(stream)
+        # d=soundplot(stream)
         da.append(soundplot(stream)) 
     stream.stop_stream()
     stream.close()
@@ -166,11 +170,15 @@ def load_lipsync_model(lipsModel):
 
 def get_noise_from_sound(signal,noise,SNR):
     RMS_s=math.sqrt(np.mean(signal**2))
+    print('rms of signal:',RMS_s)
     #required RMS of noise
     RMS_n=math.sqrt(RMS_s**2/(pow(10,SNR/10)))
+    print('rms of noise:',RMS_n)
     
     #current RMS of noise
     RMS_n_current=math.sqrt(np.mean(noise**2))
+    print('rms of noise2:',RMS_n_current)
+    print('factor:',RMS_n/RMS_n_current )
     noise=noise*(RMS_n/RMS_n_current)
     
     return noise
@@ -193,23 +201,24 @@ def mixer(clean,noisy,snr,scaler):
 def predict(duration,lipsModel,combModel,batchSize,resulFile):
 
     # Load the input wav
-    cleanAudio = start_strem(duration)
+    cleanAudio1 = start_strem(duration)
     print('#'*80)
     print('input file loaded')
     print('#'*80)
-    print("Input wav: ", cleanAudio.shape)
+    print("Input wav: ", cleanAudio1.shape)
     
-    noiseAudio,sampleRate = librosa.load(r'audio\noise.mp3',sr=16000)
-    cleanAudio,cleanScaler = scaled(cleanAudio,(-1,1))
+    noiseAudio,sampleRate = librosa.load(r'audio\noise.wav',sr=16000)
+    cleanAudio,cleanScaler = scaled(cleanAudio1,(-1,1))
     noiseAudio,noiseScaler = scaled(noiseAudio,(-1,1))
     
-    inp_wav = mixer(cleanAudio,noiseAudio,0,None)
+    inp_wav = mixer(cleanAudio,noiseAudio,15,None)
+    inp_wav = np.squeeze(inp_wav)
     print(inp_wav.shape)
-    
-    plt.plot(inp_wav)
-    plt.show()
-    sf.write('testerFile.wav', inp_wav, sampling_rate)
-    return
+    sf.write('testerFile0.wav',cleanAudio1,sampling_rate)
+    sf.write('testerFile1.wav', inp_wav, sampling_rate)
+    # plt.plot(inp_wav)
+    # plt.show()
+    # return
 
     total_steps = inp_wav.shape[0]
     # return inp_wav
