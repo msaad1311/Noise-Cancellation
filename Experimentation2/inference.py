@@ -13,6 +13,9 @@ import torch
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 
+## Increasing the SNR reduces the sound of the noise
+## SNR =1 is same sound as that was intially 
+
 # Initialize the global variables
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 sampling_rate = 16000
@@ -207,11 +210,11 @@ def predict(duration,lipsModel,combModel,batchSize,resulFile):
     print('#'*80)
     print("Input wav: ", cleanAudio1.shape)
     
-    noiseAudio,sampleRate = librosa.load(r'audio\noise.wav',sr=16000)
+    noiseAudio,sampleRate = librosa.load(r'audio\dogBarking.wav',sr=16000)
     cleanAudio,cleanScaler = scaled(cleanAudio1,(-1,1))
     noiseAudio,noiseScaler = scaled(noiseAudio,(-1,1))
     
-    inp_wav = mixer(cleanAudio,noiseAudio,15,None)
+    inp_wav = mixer(cleanAudio,noiseAudio,20,None)
     inp_wav = np.squeeze(inp_wav)
     print(inp_wav.shape)
     sf.write('testerFile0.wav',cleanAudio1,sampling_rate)
