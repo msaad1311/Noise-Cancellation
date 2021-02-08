@@ -330,7 +330,7 @@ def predict(duration,lipsModel,combModel,batchSize,resulFile):
 
 if __name__ == '__main__':
     
-    durationR = 5
+    durationR = 7
     lipsModel = r'lipsync\checkpoints\lipsync_student.pth'
     combModel = r'checkpoints\denoising.pt'
     batchSize = 32
