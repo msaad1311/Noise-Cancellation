@@ -210,11 +210,11 @@ def predict(duration,lipsModel,combModel,batchSize,resulFile):
     print('#'*80)
     print("Input wav: ", cleanAudio1.shape)
     
-    noiseAudio,sampleRate = librosa.load(r'audio\dogBarking.wav',sr=16000)
+    noiseAudio,sampleRate = librosa.load(r'audio\babyCrying.wav',sr=16000)
     cleanAudio,cleanScaler = scaled(cleanAudio1,(-1,1))
     noiseAudio,noiseScaler = scaled(noiseAudio,(-1,1))
     
-    inp_wav = mixer(cleanAudio,noiseAudio,20,None)
+    inp_wav = mixer(cleanAudio,noiseAudio,1,None)
     inp_wav = np.squeeze(inp_wav)
     print(inp_wav.shape)
     sf.write('testerFile0.wav',cleanAudio1,sampling_rate)
@@ -330,7 +330,7 @@ def predict(duration,lipsModel,combModel,batchSize,resulFile):
 
 if __name__ == '__main__':
     
-    durationR = 7
+    durationR = 10  
     lipsModel = r'lipsync\checkpoints\lipsync_student.pth'
     combModel = r'checkpoints\denoising.pt'
     batchSize = 32
