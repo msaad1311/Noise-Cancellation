@@ -1,14 +1,14 @@
-
+// import {NoiseGateNode} from 'index.js';
 const audioContext = new AudioContext();
+// var NoiseGateNode = require('noise-gate')
+// let noiseGate1 = new NoiseGateNode(audioContext);
+// console.log(noiseGate1)
 
-let noiseGate = new NoiseGateNode(audioContext);
-console.log(noiseGate)
-
-audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+// context = new (window.AudioContext || window.webkitAudioContext)();
 navigator.mediaDevices.getUserMedia({ audio: true })
 .then(function(stream) {
-    console.log(this.audioCtx)
-  let source = this.audioCtx.createMediaStreamSource(stream);
+    console.log(audioContext)
+  let source = audioContext.createMediaStreamSource(stream);
   let noiseGate = new NoiseGateNode(audioContext);
   source.connect(noiseGate);
   noiseGate.connect(audioContext.destination);
