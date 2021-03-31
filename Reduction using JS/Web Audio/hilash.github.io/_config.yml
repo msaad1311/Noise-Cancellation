@@ -1,0 +1,25 @@
+# Example Site settings
+
+google_analytics: UA-150986144-1
+
+style: light # dark (default) or light
+#listen_for_clients_preferred_style: true # true or false (default)
+
+plugins:
+  - jekyll-seo-tag
+
+title: 'hilash.github.io'
+description: "Hila Shmuel, Blog."
+#baseurl: "/jekyll-theme-console"
+url: "https://hilash.github.io"
+linkedin_username: hilashmuel
+
+header_pages:
+  - index.md
+  - about.md
+
+#footer: 'follow us on <a href="https://twitter.com/">twitter</a>'
+footer: ''
+
+# Build settings
+markdown: kramdown

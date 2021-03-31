@@ -1,0 +1,16 @@
+{
+  "name": "noise-cancellation",
+  "version": "1.0.0",
+  "description": "",
+  "main": "noise-cancellation.js",
+  "dependencies": {
+    "http-server": "^0.12.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "http-server ./"
+  },
+  "author": "",
+  "license": "ISC"
+}
