@@ -4,6 +4,8 @@
 //var drawGraph = import("./graph.js");
 var { clearBackground, drawLine, drawGraph } = import("./graph.js");
 var initUserMediaFromBrowser = import("./audio-utils.js");
+var rec0;
+var rec1;
 
 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -32,8 +34,13 @@ class NoiseCancellationSimulator {
     
     this._microphone.connect(this.noiseReducer);
     this.noiseReducer.connect(audioCtx.destination)
-    console.log("Microfone",this._microphone)
-    console.log("reducer",this.noiseReducer)
+    rec0 = new Recorder(this._microphone,{numChannels:1});
+    rec1 = new Recorder(this.noiseReducer,{numChannels:1});
+    rec0.record()
+    rec1.record()
+    console.log("Recoridng started")
+    // console.log("Microfone",this._microphone)
+    // console.log("reducer",this.noiseReducer)
 
     if (this._outputWave) {
       this._microphone.connect(this.analyser1);
@@ -76,10 +83,53 @@ class NoiseCancellationSimulator {
     this.antiWavePhase = this._antiWavePhase;
   }
 
-  stop() {
+  stop1() {
     this._disconnectMicrophone();
     this._disconnectNoiseReducer();
     window.cancelAnimationFrame(this.drawHandler);
+    rec0.stop();
+    rec0.exportWAV(this.createDownloadLink0)
+
+    rec1.stop()
+    rec1.exportWAV(this.createDownloadLink1)
+  }
+
+  createDownloadLink0(blob) {
+    var url = URL.createObjectURL(blob);
+    var au = document.createElement('audio');
+    var li = document.createElement('li');
+    var link = document.createElement('a');
+    //add controls to the <audio> element 
+    au.controls = true;
+    au.src = url;
+    //link the a element to the blob 
+    link.href = url;
+    link.download = new Date().toISOString() + '.wav';
+    link.innerHTML = link.download;
+    //add the new audio and a elements to the li element 
+    li.appendChild(au);
+    li.appendChild(link);
+    //add the li element to the ordered list 
+    recordingsList0.appendChild(li);
+  }
+
+  createDownloadLink1(blob) {
+    var url = URL.createObjectURL(blob);
+    var au = document.createElement('audio');
+    var li = document.createElement('li');
+    var link = document.createElement('a');
+    //add controls to the <audio> element 
+    au.controls = true;
+    au.src = url;
+    //link the a element to the blob 
+    link.href = url;
+    link.download = new Date().toISOString() + '.wav';
+    link.innerHTML = link.download;
+    //add the new audio and a elements to the li element 
+    li.appendChild(au);
+    li.appendChild(link);
+    //add the li element to the ordered list 
+    recordingsList1.appendChild(li);
   }
 
   _disconnectMicrophone(){
@@ -99,7 +149,7 @@ class NoiseCancellationSimulator {
     console.log('toggled');
     console.log(this.isPlaying);
     if (this.isPlaying) {
-      this.stop();
+      this.stop1();
     } else {
       this.play();
     }
@@ -109,7 +159,7 @@ class NoiseCancellationSimulator {
   set outputWave(value) {
     this._outputWave = value;
     if (this.isPlaying) {
-      this.stop();
+      this.stop1();
       this.play();
     }
   }
@@ -117,7 +167,7 @@ class NoiseCancellationSimulator {
   set outputAntiWave(value) {
     this._outputAntiWave = value;
     if (this.isPlaying) {
-      this.stop();
+      this.stop1();
       this.play();
     }
   }

@@ -63,9 +63,11 @@
       </table>
 
       <p><button class="round-corners" style="background:orange;"
-        onclick="simulator.toggle()">Play/Pause</button></p>        
+        onclick="simulator.toggle()">Play/Pause</button></p>   
+        <ol id="recordingsList0"></ol>     
+        <ol id="recordingsList1"></ol>  
 </div>
-
+<script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>
 <script src="noise-cancellation.js"></script>
 <script>
     var simulator = new NoiseCancellationSimulator();
