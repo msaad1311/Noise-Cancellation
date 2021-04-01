@@ -19,7 +19,11 @@ class NoiseCancellationSimulator {
     this._antiWavePhase = 0;
 
     this._microphoneStream = null;
+    this._microphoneStream2 = null;
     this._microphone = null;
+    this._microphoneO = null;
+    this.rec0 = null;
+    this.rec1 = null;
   }
 
   async play() {
@@ -28,16 +32,19 @@ class NoiseCancellationSimulator {
     
     this.analyser1 = audioCtx.createAnalyser();
     this.analyser2 = audioCtx.createAnalyser();
-   
+
     await this._initMicrophone();
     await this._initNoiseReducer();
     
+    
+    
+    // rec1 = new Recorder(this._microphoneO,{numChannels:1});
+    this.rec0.record()  
+    this.rec1.record()
     this._microphone.connect(this.noiseReducer);
     this.noiseReducer.connect(audioCtx.destination)
-    rec0 = new Recorder(this._microphone,{numChannels:1});
-    rec1 = new Recorder(this.noiseReducer,{numChannels:1});
-    rec0.record()
-    rec1.record()
+    // rec0 = new Recorder(this._microphone,{numChannels:1});
+      
     console.log("Recoridng started")
     // console.log("Microfone",this._microphone)
     // console.log("reducer",this.noiseReducer)
@@ -66,10 +73,21 @@ class NoiseCancellationSimulator {
     this._microphoneStream = await navigator.mediaDevices.getUserMedia(
       constraints
     );
+    this._microphoneStream2 = await navigator.mediaDevices.getUserMedia(
+      constraints
+    );
     console.log(this._microphoneStream);
     this._microphone = audioCtx.createMediaStreamSource(
       this._microphoneStream
     );
+    this._microphoneO = audioCtx.createMediaStreamSource(
+      this._microphoneStream2
+    );
+
+    this.rec0 = new Recorder(this._microphone,{numChannels:1});
+    this.rec1 = new Recorder(this._microphoneO,{numChannels:1});
+    // rec0.record()
+    // rec1.record()
   }
 
   async _initNoiseReducer() {
@@ -87,11 +105,11 @@ class NoiseCancellationSimulator {
     this._disconnectMicrophone();
     this._disconnectNoiseReducer();
     window.cancelAnimationFrame(this.drawHandler);
-    rec0.stop();
-    rec0.exportWAV(this.createDownloadLink0)
+    this.rec0.stop();
+    this.rec0.exportWAV(this.createDownloadLink0)
 
-    rec1.stop()
-    rec1.exportWAV(this.createDownloadLink1)
+    this.rec1.stop()
+    this.rec1.exportWAV(this.createDownloadLink1)
   }
 
   createDownloadLink0(blob) {
@@ -138,7 +156,11 @@ class NoiseCancellationSimulator {
     this._microphoneStream.getTracks().forEach(function(track) {
       track.stop();
     });
+    this._microphoneStream2.getTracks().forEach(function(track) {
+      track.stop();
+    });
     this._microphone.disconnect();
+    this._microphoneO.disconnect();
   }
 
   _disconnectNoiseReducer(){
