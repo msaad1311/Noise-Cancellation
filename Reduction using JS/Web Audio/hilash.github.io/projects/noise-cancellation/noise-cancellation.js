@@ -81,6 +81,8 @@ class NoiseCancellationSimulator {
   }
 
   _disconnectMicrophone(){
+    console.log('into the discount')
+    console.log(this._microphoneStream)
     this._microphoneStream.getTracks().forEach(function(track) {
       track.stop();
     });
