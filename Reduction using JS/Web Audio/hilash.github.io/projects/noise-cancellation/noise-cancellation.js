@@ -32,6 +32,8 @@ class NoiseCancellationSimulator {
     
     this._microphone.connect(this.noiseReducer);
     this.noiseReducer.connect(audioCtx.destination)
+    console.log("Microfone",this._microphone)
+    console.log("reducer",this.noiseReducer)
 
     if (this._outputWave) {
       this._microphone.connect(this.analyser1);
