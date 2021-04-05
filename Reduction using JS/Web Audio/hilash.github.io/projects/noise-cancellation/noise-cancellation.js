@@ -2,6 +2,7 @@
 //https://iopscience.iop.org/article/10.1088/1757-899X/308/1/012039/pdf
 
 //var drawGraph = import("./graph.js");
+//  use Local host website to test it since the chrome causes issues in running
 var { clearBackground, drawLine, drawGraph } = import("./graph.js");
 var initUserMediaFromBrowser = import("./audio-utils.js");
 var rec0;
